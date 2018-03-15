@@ -110,7 +110,7 @@ def test_latest_model_and_unload():
 
         assert project._latest_used_model == LATEST_USED_MODEL
 
-        project._set_latest_model_used_and_unload(LATEST_TRAINED_MODEL)
+        project._set_latest_used_model_and_unload(LATEST_TRAINED_MODEL)
 
         assert project._models == {LATEST_TRAINED_MODEL: 'dummy trained model'}
 

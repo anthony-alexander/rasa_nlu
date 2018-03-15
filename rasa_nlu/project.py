@@ -102,19 +102,18 @@ class Project(object):
         logger.warn("Invalid model requested. Using default")
         return self._latest_trained_model()
 
-    def _set_latest_model_used_and_unload(self, model_name):
-        latest_used_model_name = self._latest_used_model
-        if not latest_used_model_name:
+    def _set_latest_used_model_and_unload(self, model_name):
+        if not self._latest_used_model:
             self._latest_used_model = model_name
-        elif model_name != latest_used_model_name:
+        elif model_name != self._latest_used_model:
             try:
-                self.unload(latest_used_model_name)
+                self.unload(self._latest_used_model)
                 logger.debug("Successfully unloaded model {} "
-                             "for project {}".format(latest_used_model_name,
+                             "for project {}".format(self._latest_used_model,
                                                      self._project))
             except KeyError as e:
                 logger.warn("Failed to unload model {} for project {}. "
-                            "{}".format(latest_used_model_name,
+                            "{}".format(self._latest_used_model,
                                         self._project, e))
             self._latest_used_model = model_name
 
@@ -135,7 +134,7 @@ class Project(object):
 
         self._end_read()
 
-        self._set_latest_model_used_and_unload(model_name)
+        self._set_latest_used_model_and_unload(model_name)
 
         return response, model_name
 
