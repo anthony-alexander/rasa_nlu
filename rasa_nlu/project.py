@@ -70,7 +70,7 @@ class Project(object):
             # `_latest_trained_project_model()` is a good choice.
 
             logger.debug("No model specified. Using default")
-            return self._latest_trained_project_model
+            return self._latest_trained_project_model()
 
         elif requested_model_name in self._models:  # model exists in cache
             return requested_model_name
@@ -100,7 +100,7 @@ class Project(object):
 
         # still not found user specified model
         logger.warn("Invalid model requested. Using default")
-        return self._latest_trained_project_model
+        return self._latest_trained_project_model()
 
     def _set_latest_model_and_unload(self, model_name):
         latest_used_model_name = self._latest_used_project_model
@@ -108,6 +108,7 @@ class Project(object):
             return None
         elif model_name != latest_used_model_name:
             try:
+                print('trying to unload', latest_used_model_name)
                 unloaded_model = self.unload(latest_used_model_name)
                 logger.debug("Successfully unloaded model {} "
                              "for project {}".format(unloaded_model,
@@ -154,7 +155,6 @@ class Project(object):
         self._writer_lock.release()
         return unloaded_model
 
-    @property
     def _latest_trained_project_model(self):
         """Retrieves the latest trained model for an project"""
 
