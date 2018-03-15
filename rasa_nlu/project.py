@@ -37,7 +37,7 @@ class Project(object):
         self._readers_count = 0
         self._path = None
         self._project = project
-        self._latest_used_project_model = None
+        self._latest_used_model = None
 
         if project:
             self._path = os.path.join(self._config['path'], project)
@@ -67,10 +67,10 @@ class Project(object):
             # then model will be cached, this is a kind of workaround to
             # refresh latest project model.
             # BTW if refresh function is wanted, maybe add implement code to
-            # `_latest_trained_project_model()` is a good choice.
+            # `_latest_trained_model()` is a good choice.
 
             logger.debug("No model specified. Using default")
-            return self._latest_trained_project_model()
+            return self._latest_trained_model()
 
         elif requested_model_name in self._models:  # model exists in cache
             return requested_model_name
@@ -100,32 +100,28 @@ class Project(object):
 
         # still not found user specified model
         logger.warn("Invalid model requested. Using default")
-        return self._latest_trained_project_model()
+        return self._latest_trained_model()
 
-    def _set_latest_model_and_unload(self, model_name):
-        latest_used_model_name = self._latest_used_project_model
-        if latest_used_model_name is None:
-            return None
+    def _set_latest_model_used_and_unload(self, model_name):
+        latest_used_model_name = self._latest_used_model
+        if not latest_used_model_name:
+            self._latest_used_model = model_name
         elif model_name != latest_used_model_name:
             try:
-                print('trying to unload', latest_used_model_name)
-                unloaded_model = self.unload(latest_used_model_name)
+                self.unload(latest_used_model_name)
                 logger.debug("Successfully unloaded model {} "
-                             "for project {}".format(unloaded_model,
+                             "for project {}".format(latest_used_model_name,
                                                      self._project))
             except KeyError as e:
                 logger.warn("Failed to unload model {} for project {}. "
                             "{}".format(latest_used_model_name,
                                         self._project, e))
-            finally:
-                self._latest_used_project_model = model_name
+            self._latest_used_model = model_name
 
     def parse(self, text, time=None, requested_model_name=None):
         self._begin_read()
 
         model_name = self._dynamic_load_model(requested_model_name)
-
-        self._set_latest_model_and_unload(model_name)
 
         self._loader_lock.acquire()
         try:
@@ -139,7 +135,7 @@ class Project(object):
 
         self._end_read()
 
-        self._set_latest_model_and_unload(model_name)
+        self._set_latest_model_used_and_unload(model_name)
 
         return response, model_name
 
@@ -151,11 +147,10 @@ class Project(object):
 
     def unload(self, model_name):
         self._writer_lock.acquire()
-        unloaded_model = self._models.pop(model_name)
+        del self._models[model_name]
         self._writer_lock.release()
-        return unloaded_model
 
-    def _latest_trained_project_model(self):
+    def _latest_trained_model(self):
         """Retrieves the latest trained model for an project"""
 
         models = {model[len(MODEL_NAME_PREFIX):]: model

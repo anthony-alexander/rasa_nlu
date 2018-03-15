@@ -53,12 +53,12 @@ def test_dynamic_load_model_with_refresh_not_exists_model():
     def mocked_search_for_models(self):
         pass
 
-    def mocked_latest_trained_project_model(self):
+    def mocked_latest_trained_model(self):
         return LATEST_MODEL_NAME
 
     with mock.patch.object(Project, "__init__", mocked_init):
         with mock.patch.object(Project, "_search_for_models", mocked_search_for_models):
-            with mock.patch.object(Project, "_latest_trained_project_model", mocked_latest_trained_project_model):
+            with mock.patch.object(Project, "_latest_trained_model", mocked_latest_trained_model):
                 project = Project()
 
                 project._models = ()
@@ -77,12 +77,12 @@ def test_dynamic_load_model_with_model_is_none():
     def mocked_search_for_models(self):
         pass
 
-    def mocked_latest_trained_project_model(self):
+    def mocked_latest_trained_model(self):
         return LATEST_MODEL_NAME
 
     with mock.patch.object(Project, "__init__", mocked_init):
         with mock.patch.object(Project, "_search_for_models", mocked_search_for_models):
-            with mock.patch.object(Project, "_latest_trained_project_model", mocked_latest_trained_project_model):
+            with mock.patch.object(Project, "_latest_trained_model", mocked_latest_trained_model):
                 project = Project()
 
                 project._models = ()
@@ -99,26 +99,19 @@ def test_latest_model_and_unload():
     MODELS = {LATEST_USED_MODEL: 'dummy used model',
               LATEST_TRAINED_MODEL: 'dummy trained model'}
 
-    def mocked_init(self, *args, **kwargs):
-        from threading import Lock
-        self._latest_used_project_model = LATEST_USED_MODEL
-        self._writer_lock = Lock()
-        self._project = PROJECT
-        return None
-
     def mocked_search_for_models(self):
         pass
 
-    with mock.patch.object(Project, "__init__", mocked_init):
-        with mock.patch.object(Project, "_search_for_models", mocked_search_for_models):
-            project = Project()
+    with mock.patch.object(Project, "_search_for_models", mocked_search_for_models):
+        project = Project()
+        project._latest_used_model = LATEST_USED_MODEL
+        project._project = PROJECT
+        project._models = MODELS
 
-            project._models = MODELS
+        assert project._latest_used_model == LATEST_USED_MODEL
 
-            assert project._latest_used_project_model == LATEST_USED_MODEL
+        project._set_latest_model_used_and_unload(LATEST_TRAINED_MODEL)
 
-            project._set_latest_model_and_unload(LATEST_TRAINED_MODEL)
+        assert project._models == {LATEST_TRAINED_MODEL: 'dummy trained model'}
 
-            assert project._models == {LATEST_TRAINED_MODEL: 'dummy trained model'}
-
-            assert project._latest_used_project_model == LATEST_TRAINED_MODEL
+        assert project._latest_used_model == LATEST_TRAINED_MODEL
