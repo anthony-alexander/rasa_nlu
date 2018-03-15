@@ -104,6 +104,7 @@ def test_latest_model_and_unload():
         self._latest_used_project_model = LATEST_USED_MODEL
         self._writer_lock = Lock()
         self._project = PROJECT
+        return None
 
     def mocked_search_for_models(self):
         pass
